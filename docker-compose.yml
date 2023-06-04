@@ -1,0 +1,41 @@
+version: '2.2'
+services:
+  chatdoc:
+    image: guangzhengli/chatfiles:latest
+    container_name: chatdoc
+    ports:
+      - 5002:5000
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - default
+  chatdoc-ui:
+    image: guangzhengli/chatfiles-ui:latest
+    container_name: chatdoc-ui
+    # ports:
+    #   - 3000:3000
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CHAT_FILES_SERVER_HOST=http://chatdoc:5000
+      - NEXT_PUBLIC_CHAT_FILES_MAX_SIZE=0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chatdoc-ui-insecure.rule=Host(`ps.vob.ai`)"
+      - "traefik.http.routers.chatdoc-ui-insecure.entrypoints=web"
+      - "traefik.http.middlewares.chatdoc-ui-redirect-web-secure.redirectscheme.scheme=https"
+      - "traefik.http.routers.chatdoc-ui-insecure.middlewares=chatdoc-ui-redirect-web-secure"
+      - "traefik.http.routers.chatdoc-ui.rule=Host(`ps.vob.ai`)"
+      - "traefik.http.routers.chatdoc-ui.entrypoints=websecure"
+      - "traefik.http.routers.chatdoc-ui.tls=true"
+      - "traefik.http.routers.chatdoc-ui.tls.certresolver=myresolver"
+      - "traefik.http.routers.chatdoc-ui.middlewares=chatdoc-ui_auth"
+      - "traefik.http.middlewares.chatdoc-ui_auth.basicauth.users=falktron:$$2y$$05$$8GUJU2uOvVTvb4cod1WpBOQmDhgVy7p.sB3m17zC8.q/.iy/j4tfq"
+    networks:
+      - auto-gpt.tech
+      - default 
+    depends_on:
+      - chatdoc
+
+networks:
+  auto-gpt.tech:
+    external: true
